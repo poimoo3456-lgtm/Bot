@@ -3,60 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NattDev QR Pro+</title>
+<title>NattDev QR Shop</title>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
 body {
   margin:0;
-  font-family:sans-serif;
-  background:#0f2027;
+  font-family: system-ui;
+  background: #0f172a;
   color:white;
-  text-align:center;
 }
 
-.container { max-width:420px; margin:auto; padding:10px; }
+.container {
+  max-width: 900px;
+  margin:auto;
+  padding:15px;
+}
 
-.box {
-  background:rgba(255,255,255,0.1);
+h1 { text-align:center; }
+
+.card {
+  background:#1e293b;
   padding:15px;
   border-radius:15px;
-  margin-top:10px;
+  margin-top:15px;
 }
 
-input, button {
+input, textarea {
   width:100%;
-  padding:12px;
+  padding:10px;
   margin-top:8px;
+  border-radius:10px;
   border:none;
-  border-radius:10px;
 }
 
-button { background:#00ffcc; }
-
-.templates {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:6px;
-}
-
-.templates img {
-  width:100%;
-  border-radius:10px;
-  cursor:pointer;
-}
-
-.templates img.active {
-  outline:2px solid #00ffcc;
-}
-
-canvas {
-  width:100%;
+button {
   margin-top:10px;
-  border-radius:10px;
-  background:white;
+  padding:12px;
+  width:100%;
+  border:none;
+  border-radius:12px;
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
 }
+
+.product {
+  background:#334155;
+  padding:10px;
+  border-radius:12px;
+  margin-top:10px;
+}
+
+.product img {
+  width:100%;
+  border-radius:10px;
+}
+
+.qr {
+  display:flex;
+  justify-content:center;
+  margin-top:10px;
+}
+
+.copy {
+  background:#0ea5e9;
+}
+
 </style>
 </head>
 
@@ -64,128 +78,176 @@ canvas {
 
 <div class="container">
 
-<h2>🔥 QR Studio Pro+</h2>
+<h1>🛒 NattDev QR Shop</h1>
 
-<!-- เลือกโหมด -->
-<div class="box">
-<button onclick="mode='template'">🎨 ใช้แม่แบบ</button>
-<button onclick="mode='upload'">🖼️ ใช้รูปของฉัน</button>
+<!-- ADMIN -->
+<div class="card">
+<h2>🔧 หลังบ้าน</h2>
+
+<input id="name" placeholder="ชื่อสินค้า">
+<input id="price" placeholder="ราคา">
+<input id="img" placeholder="ลิงก์รูปภาพ">
+<textarea id="desc" placeholder="รายละเอียด"></textarea>
+
+<button onclick="addProduct()">➕ เพิ่มสินค้า</button>
+
+<div id="adminList"></div>
 </div>
 
-<!-- TEMPLATE -->
-<div class="box" id="templateBox">
-<h3>เลือกแม่แบบ</h3>
-
-<div class="templates">
-<img src="https://picsum.photos/200?1" onclick="selectTemplate(this)">
-<img src="https://picsum.photos/200?2" onclick="selectTemplate(this)">
-<img src="https://picsum.photos/200?3" onclick="selectTemplate(this)">
-<img src="https://picsum.photos/200?4" onclick="selectTemplate(this)">
-<img src="https://picsum.photos/200?5" onclick="selectTemplate(this)">
-<img src="https://picsum.photos/200?6" onclick="selectTemplate(this)">
-</div>
+<!-- QR -->
+<div class="card">
+<h2>📱 QR ร้าน</h2>
+<div class="qr"><canvas id="qr"></canvas></div>
 </div>
 
-<!-- UPLOAD -->
-<div class="box">
-<input type="file" id="upload" accept="image/*">
-</div>
+<!-- SHOP -->
+<div class="card">
+<h2>🛍️ สั่งซื้อ</h2>
 
-<!-- INPUT -->
-<div class="box">
-<input id="text" placeholder="ข้อความ / ลิงก์">
-<button onclick="generate()">สร้าง QR</button>
-<button onclick="download()">ดาวน์โหลด</button>
+<input id="cname" placeholder="ชื่อ *">
+<input id="phone" placeholder="เบอร์ *">
+<input id="contact" placeholder="Facebook / Line">
 
-<canvas id="canvas"></canvas>
+<h3>สินค้า</h3>
+<div id="shopList"></div>
+
+<button onclick="order()">✅ ยืนยันสั่งซื้อ</button>
+
+<div id="result"></div>
 </div>
 
 </div>
 
 <script>
-let mode = "template";
-let selectedImage = null;
-let userImage = null;
 
-// เลือก template
-function selectTemplate(img){
-  document.querySelectorAll(".templates img").forEach(i=>i.classList.remove("active"));
-  img.classList.add("active");
+// ===== โหลดสินค้า =====
+let products = JSON.parse(localStorage.getItem("products")) || [];
 
-  selectedImage = new Image();
-  selectedImage.crossOrigin="anonymous";
-  selectedImage.src = img.src;
+// ===== เพิ่มสินค้า =====
+function addProduct(){
+  if(!name.value || !price.value){
+    alert("กรอกชื่อและราคา");
+    return;
+  }
+
+  let p = {
+    name:name.value,
+    price:price.value,
+    img:img.value || "https://via.placeholder.com/300",
+    desc:desc.value
+  };
+
+  products.push(p);
+  localStorage.setItem("products", JSON.stringify(products));
+
+  name.value = price.value = img.value = desc.value = "";
+  render();
 }
 
-// upload รูป
-upload.onchange = e=>{
-  const file = e.target.files[0];
-  const reader = new FileReader();
+// ===== แสดงสินค้า =====
+function render(){
+  adminList.innerHTML = "";
+  shopList.innerHTML = "";
 
-  reader.onload = ()=>{
-    userImage = new Image();
-    userImage.src = reader.result;
-  }
+  products.forEach((p,i)=>{
+    adminList.innerHTML += `
+      <div class="product">
+        <b>${p.name}</b> - ${p.price}฿
+      </div>
+    `;
 
-  reader.readAsDataURL(file);
-}
-
-// สร้าง QR
-function generate(){
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
-
-  canvas.width = 400;
-  canvas.height = 400;
-
-  let img = null;
-
-  if(mode==="upload" && userImage){
-    img = userImage;
-  }
-
-  if(mode==="template" && selectedImage){
-    img = selectedImage;
-  }
-
-  if(img){
-    img.onload = ()=>{
-      ctx.drawImage(img,0,0,400,400);
-      drawQR(ctx);
-    }
-    if(img.complete){
-      ctx.drawImage(img,0,0,400,400);
-      drawQR(ctx);
-    }
-  } else {
-    drawQR(ctx);
-  }
-}
-
-// วาด QR
-function drawQR(ctx){
-  const data = text.value;
-
-  QRCode.toCanvas(document.createElement("canvas"), data, {
-    width:250,
-    margin:1
-  }, function(err, qrCanvas){
-
-    // blend (เนียน)
-    ctx.globalAlpha = 0.85;
-    ctx.drawImage(qrCanvas,75,75,250,250);
-    ctx.globalAlpha = 1;
-
+    shopList.innerHTML += `
+      <div class="product">
+        <img src="${p.img}">
+        <h3>${p.name}</h3>
+        <p>${p.desc}</p>
+        <p>💰 ${p.price} บาท</p>
+        <label>
+          <input type="checkbox" value="${p.name}|${p.price}">
+          เลือกสินค้า
+        </label>
+      </div>
+    `;
   });
 }
 
-// ดาวน์โหลด
-function download(){
-  const link=document.createElement("a");
-  link.download="qr.png";
-  link.href=canvas.toDataURL();
-  link.click();
+// ===== QR =====
+QRCode.toCanvas(document.getElementById("qr"), window.location.href, {
+  width:200
+});
+
+// ===== Telegram =====
+const TOKEN = "8583371666:AAFgVt_SVUw8Gr5DJCzIG474MqmbJ6HBtjg";
+const CHAT_ID = "7967010433";
+
+// ===== สั่งซื้อ =====
+function order(){
+
+  let cnameVal = cname.value.trim();
+  let phoneVal = phone.value.trim();
+
+  if(!cnameVal || !phoneVal){
+    alert("กรอกชื่อและเบอร์");
+    return;
+  }
+
+  let selected = [];
+  let total = 0;
+
+  document.querySelectorAll("#shopList input:checked").forEach(el=>{
+    let [n,p] = el.value.split("|");
+    selected.push(n);
+    total += parseInt(p);
+  });
+
+  if(selected.length === 0){
+    alert("เลือกสินค้า");
+    return;
+  }
+
+  let msg = `
+🛒 ออเดอร์ใหม่
+👤 ${cnameVal}
+📞 ${phoneVal}
+💬 ${contact.value}
+
+📦 ${selected.join(", ")}
+💰 รวม ${total} บาท
+`;
+
+  // ===== ส่ง Telegram =====
+  fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      chat_id:CHAT_ID,
+      text:msg
+    })
+  });
+
+  // ===== ลิงก์ =====
+  let url = window.location.href;
+
+  result.innerHTML = `
+    <p>📎 คัดลอกลิงก์ร้าน</p>
+    <input id="copyLink" value="${url}">
+    <button class="copy" onclick="copyLink()">📋 คัดลอก</button>
+  `;
+
+  alert("สั่งซื้อเรียบร้อย");
 }
+
+// ===== copy =====
+function copyLink(){
+  let input = document.getElementById("copyLink");
+  input.select();
+  document.execCommand("copy");
+  alert("คัดลอกแล้ว");
+}
+
+// ===== start =====
+render();
+
 </script>
 
 </body>
