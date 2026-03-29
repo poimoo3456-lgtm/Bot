@@ -3,196 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NattDev QR Shop</title>
+<title>NattDev Secure Shop</title>
+
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#0f172a;color:white;}
-.container{max-width:900px;margin:auto;padding:15px;}
-.card{background:#1e293b;padding:15px;border-radius:15px;margin-top:15px;}
-input,textarea,button{width:100%;padding:10px;margin-top:10px;border-radius:10px;border:none;}
-button{background:#22c55e;color:white;font-weight:bold;}
-.product{background:#334155;padding:10px;border-radius:10px;margin-top:10px;}
+body{font-family:sans-serif;background:#0f172a;color:white;padding:15px;}
+.card{background:#1e293b;padding:10px;border-radius:15px;margin-top:10px;}
 img{width:100%;border-radius:10px;}
-.nav button{width:32%;background:#0ea5e9;}
-.hidden{display:none;}
-.contact-btn{display:block;text-align:center;padding:12px;margin-top:10px;border-radius:10px;color:white;text-decoration:none;font-weight:bold;}
-.line{background:#06c755;}
-.fb{background:#1877f2;}
+input,button{width:100%;padding:10px;margin-top:10px;border:none;border-radius:10px;}
+button{background:#22c55e;color:white;}
+#qr{margin-top:20px;}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>🛒 NattDev QR Shop</h1>
-
-<div class="nav">
-<button onclick="show('home')">🏠 หน้าแรก</button>
-<button onclick="show('admin')">🔧 หลังบ้าน</button>
-<button onclick="show('shop')">🛍️ ร้านค้า</button>
-</div>
-
-<!-- HOME -->
-<div id="home" class="page">
-<div class="card">
-<h2>📱 QR ร้าน</h2>
-<canvas id="qr"></canvas>
-</div>
-</div>
-
-<!-- ADMIN -->
-<div id="admin" class="page hidden">
-<div class="card">
-<h2>🔧 หลังบ้าน</h2>
-
-<input id="name" placeholder="ชื่อสินค้า">
-<input id="price" placeholder="ราคา">
-<input id="img" placeholder="ลิงก์รูป">
-<textarea id="desc" placeholder="รายละเอียด"></textarea>
-
-<button onclick="addProduct()">➕ เพิ่มสินค้า</button>
-
-<div id="adminList"></div>
-</div>
-</div>
-
-<!-- SHOP -->
-<div id="shop" class="page hidden">
-
-<div class="card">
-<h2>📞 ติดต่อร้าน</h2>
-
-<a href="https://line.me/ti/g2/AMkf59O56XfZQn1Tgp_ER7Jqpm-ObPGyWR15MQ?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" class="contact-btn line">
-💬 เข้ากลุ่ม LINE (NattDev)
-</a>
-
-<a href="https://www.facebook.com/share/18WYnQ5aRZ/?mibextid=wwXIfr" target="_blank" class="contact-btn fb">
-📘 ติดต่อ Facebook
-</a>
-
-<p style="font-size:13px;opacity:0.8;">
-📢 โอนแล้วส่งสลิปทาง LINE หรือ Facebook
-</p>
-
-</div>
-
-<div class="card">
-<h2>🛍️ สั่งซื้อ</h2>
+<h1>🛒 NattDev Secure Shop</h1>
 
 <input id="cname" placeholder="ชื่อ">
 <input id="phone" placeholder="เบอร์">
-<input id="contact" placeholder="Facebook / Line">
 
-<div id="shopList"></div>
+<div id="products"></div>
 
-<button onclick="order()">✅ สั่งซื้อ</button>
+<h2 id="total">รวม: 0 บาท</h2>
 
-<div id="result"></div>
+<button onclick="order()">📦 สั่งซื้อ + สร้าง QR</button>
 
-</div>
-</div>
-
-</div>
+<canvas id="qr"></canvas>
 
 <script>
 
-// ===== เปลี่ยนหน้า =====
-function show(page){
-  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
-  document.getElementById(page).classList.remove("hidden");
-}
+// ===== CONFIG =====
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/141QI6fMLl7VOLcfsjXJEr1hpq3MDZzIt2laoYvPelG4/export?format=csv";
 
-// ===== โหลดสินค้า =====
-let products = JSON.parse(localStorage.getItem("products")) || [];
+const TELEGRAM_TOKEN = "8583371666:AAFgVt_SVUw8Gr5DJCzIG474MqmbJ6HBtjg";
+const CHAT_ID = "7967010433";
 
-// ===== เพิ่มสินค้า =====
-function addProduct(){
-  if(!name.value || !price.value){
-    alert("กรอกชื่อและราคา");
-    return;
-  }
+let total = 0;
+let selectedPromptPay = "";
 
-  let p = {
-    name:name.value,
-    price:price.value,
-    img:img.value || "https://via.placeholder.com/300",
-    desc:desc.value
-  };
+// ===== LOAD =====
+fetch(SHEET_URL)
+.then(res => res.text())
+.then(csv => {
 
-  products.push(p);
-  localStorage.setItem("products", JSON.stringify(products));
+  let rows = csv.split("\n").slice(1);
 
-  name.value = price.value = img.value = desc.value = "";
-  render();
-}
+  rows.forEach(row=>{
+    let col = row.split(",");
 
-// ===== แสดงสินค้า =====
-function render(){
-  adminList.innerHTML="";
-  shopList.innerHTML="";
+    let name = col[0];
+    let price = parseInt(col[1]);
+    let img = col[2];
+    let promptpay = col[4];
 
-  products.forEach(p=>{
-    adminList.innerHTML += `
-      <div class="product">
-        ${p.name} - ${p.price} บาท
-      </div>
-    `;
-
-    shopList.innerHTML += `
-      <div class="product">
-        <img src="${p.img}">
-        <h3>${p.name}</h3>
-        <p>${p.desc}</p>
-        <p>${p.price} บาท</p>
-        <input type="checkbox" value="${p.name}|${p.price}">
+    document.getElementById("products").innerHTML += `
+      <div class="card">
+        <img src="${img}">
+        <h3>${name}</h3>
+        <p>${price} บาท</p>
+        <input type="checkbox" onchange="calc(this,${price},'${promptpay}')">
       </div>
     `;
   });
+
+});
+
+// ===== CALC =====
+function calc(el,price,promptpay){
+  if(el.checked){
+    total += price;
+    selectedPromptPay = promptpay;
+  }else{
+    total -= price;
+  }
+
+  document.getElementById("total").innerText = "รวม: " + total + " บาท";
 }
 
-// ===== QR =====
-QRCode.toCanvas(document.getElementById("qr"), window.location.href);
+// ===== QR PROMPTPAY =====
+function generateQR(id,amount){
 
-// ===== Telegram =====
-const TOKEN = "PUT_YOUR_TOKEN";
-const CHAT_ID = "PUT_CHAT_ID";
+  let payload = "00020101021129370016A00000067701011101130066"+id+"5802TH530376454"+amount.toFixed(2)+"6304";
 
-// ===== สั่งซื้อ =====
+  QRCode.toCanvas(document.getElementById("qr"), payload);
+}
+
+// ===== ORDER =====
 function order(){
 
-  if(!cname.value || !phone.value){
-    alert("กรอกชื่อและเบอร์");
-    return;
-  }
+  let items=[];
 
-  let selected=[];
-  let total=0;
-
-  document.querySelectorAll("#shop input[type=checkbox]:checked")
+  document.querySelectorAll("input[type=checkbox]:checked")
   .forEach(el=>{
-    let [n,p]=el.value.split("|");
-    selected.push(n);
-    total+=parseInt(p);
+    let name = el.parentElement.querySelector("h3").innerText;
+    items.push(name);
   });
 
-  if(selected.length===0){
-    alert("เลือกสินค้า");
+  if(!selectedPromptPay){
+    alert("ไม่มี PromptPay ร้าน");
     return;
   }
+
+  // สร้าง QR ของร้าน
+  generateQR(selectedPromptPay, total);
 
   let msg = `
 🛒 ออเดอร์ใหม่
 👤 ${cname.value}
 📞 ${phone.value}
-💬 ${contact.value}
 
-📦 ${selected.join(", ")}
+📦 ${items.join(", ")}
 💰 ${total} บาท
+💳 ร้าน: ${selectedPromptPay}
 `;
 
-  fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`,{
+  fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -201,16 +128,8 @@ function order(){
     })
   });
 
-  result.innerHTML = `
-  <p>📎 ลิงก์ร้าน</p>
-  <input value="${location.href}">
-  `;
-
-  alert("สั่งซื้อสำเร็จ");
+  alert("ระบบสร้าง QR ของร้านแล้ว เงินเข้าร้านโดยตรง");
 }
-
-// ===== start =====
-render();
 
 </script>
 
