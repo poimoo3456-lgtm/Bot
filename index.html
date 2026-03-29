@@ -2,72 +2,126 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>NattDev QR Ultimate</title>
+
+<!-- สำคัญมาก: รองรับมือถือ -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>NattDev QR Mobile</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: sans-serif;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg,#0f2027,#2c5364);
   color: white;
   text-align: center;
 }
+
+/* Safe Area (iPhone Notch) */
+body {
+  padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
+}
+
+.container {
+  max-width: 400px;
+  margin: auto;
+  padding: 15px;
+}
+
 .box {
   background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(15px);
   padding: 20px;
-  margin: 20px auto;
-  width: 300px;
-  border-radius: 15px;
+  margin-top: 15px;
+  border-radius: 20px;
 }
-input, button {
-  padding: 10px;
-  margin: 5px;
-  border-radius: 10px;
+
+/* อินพุต */
+input {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 12px;
   border: none;
+  font-size: 16px;
 }
+
+/* ปุ่ม */
 button {
-  background: #00ffcc;
-  cursor: pointer;
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(90deg,#00ffcc,#00c3ff);
+  color: black;
 }
+
+/* ปุ่มกดเอฟเฟกต์ */
+button:active {
+  transform: scale(0.97);
+}
+
+/* QR */
 canvas {
-  margin-top: 20px;
-  border: 5px solid white;
-  border-radius: 10px;
+  width: 100% !important;
+  height: auto !important;
+  margin-top: 15px;
+  border-radius: 15px;
+  background: white;
+  padding: 10px;
 }
-.hidden { display: none; }
+
+.hidden {
+  display: none;
+}
+
+/* หัวข้อ */
+h1 {
+  font-size: 22px;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🔥 NattDev QR Ultimate</h1>
+<div class="container">
+
+<h1>📱 NattDev QR Mobile</h1>
 
 <!-- LOGIN -->
 <div id="auth" class="box">
   <h3>สมัคร / ล็อกอิน</h3>
-  <input id="email" placeholder="Email"><br>
-  <input id="password" type="password" placeholder="Password"><br>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
 
   <button onclick="register()">สมัคร</button>
   <button onclick="login()">ล็อกอิน</button>
 </div>
 
-<!-- DASHBOARD -->
+<!-- APP -->
 <div id="app" class="hidden">
   <div class="box">
     <h3 id="welcome"></h3>
 
-    <input id="text" placeholder="ใส่ข้อความ / ลิงก์"><br>
+    <input id="text" placeholder="ใส่ข้อความ / ลิงก์">
 
-    <label>สี QR</label>
-    <input type="color" id="color" value="#00ffcc"><br>
+    <input type="color" id="color" value="#00ffcc">
 
     <button onclick="generateQR()">สร้าง QR</button>
     <button onclick="downloadQR()">ดาวน์โหลด</button>
 
-    <br>
     <canvas id="qr"></canvas>
   </div>
+</div>
+
 </div>
 
 <script>
@@ -94,7 +148,6 @@ function login() {
   if (saved === pass) {
     currentUser = email;
     localStorage.setItem("login", email);
-
     showApp();
   } else {
     alert("ข้อมูลไม่ถูกต้อง");
@@ -110,13 +163,13 @@ window.onload = () => {
   }
 };
 
-// แสดง dashboard
+// แสดงแอป
 function showApp() {
   document.getElementById("auth").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
 
   document.getElementById("welcome").innerText =
-    "👤 ผู้ใช้: " + currentUser;
+    "👤 " + currentUser;
 }
 
 // สร้าง QR
@@ -131,9 +184,11 @@ function generateQR() {
   });
 
   QRCode.toCanvas(document.getElementById("qr"), data, {
+    width: 300,
+    margin: 2,
     color: {
       dark: color,
-      light: "#000000"
+      light: "#ffffff"
     }
   });
 }
@@ -141,9 +196,10 @@ function generateQR() {
 // ดาวน์โหลด
 function downloadQR() {
   const canvas = document.getElementById("qr");
+
   const link = document.createElement("a");
   link.download = "qr.png";
-  link.href = canvas.toDataURL();
+  link.href = canvas.toDataURL("image/png");
   link.click();
 }
 </script>
