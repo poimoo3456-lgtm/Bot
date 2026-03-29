@@ -4,73 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NattDev QR Shop</title>
-
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-body {
-  margin:0;
-  font-family: system-ui;
-  background: #0f172a;
-  color:white;
-}
-
-.container {
-  max-width: 900px;
-  margin:auto;
-  padding:15px;
-}
-
-h1 { text-align:center; }
-
-.card {
-  background:#1e293b;
-  padding:15px;
-  border-radius:15px;
-  margin-top:15px;
-}
-
-input, textarea {
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  border-radius:10px;
-  border:none;
-}
-
-button {
-  margin-top:10px;
-  padding:12px;
-  width:100%;
-  border:none;
-  border-radius:12px;
-  background:#22c55e;
-  color:white;
-  font-weight:bold;
-}
-
-.product {
-  background:#334155;
-  padding:10px;
-  border-radius:12px;
-  margin-top:10px;
-}
-
-.product img {
-  width:100%;
-  border-radius:10px;
-}
-
-.qr {
-  display:flex;
-  justify-content:center;
-  margin-top:10px;
-}
-
-.copy {
-  background:#0ea5e9;
-}
-
+body{margin:0;font-family:sans-serif;background:#0f172a;color:white;}
+.container{max-width:900px;margin:auto;padding:15px;}
+.card{background:#1e293b;padding:15px;border-radius:15px;margin-top:15px;}
+input,textarea,button{width:100%;padding:10px;margin-top:10px;border-radius:10px;border:none;}
+button{background:#22c55e;color:white;font-weight:bold;}
+.product{background:#334155;padding:10px;border-radius:10px;margin-top:10px;}
+img{width:100%;border-radius:10px;}
+.nav button{width:32%;background:#0ea5e9;}
+.hidden{display:none;}
+.contact-btn{display:block;text-align:center;padding:12px;margin-top:10px;border-radius:10px;color:white;text-decoration:none;font-weight:bold;}
+.line{background:#06c755;}
+.fb{background:#1877f2;}
 </style>
 </head>
 
@@ -80,45 +28,81 @@ button {
 
 <h1>🛒 NattDev QR Shop</h1>
 
+<div class="nav">
+<button onclick="show('home')">🏠 หน้าแรก</button>
+<button onclick="show('admin')">🔧 หลังบ้าน</button>
+<button onclick="show('shop')">🛍️ ร้านค้า</button>
+</div>
+
+<!-- HOME -->
+<div id="home" class="page">
+<div class="card">
+<h2>📱 QR ร้าน</h2>
+<canvas id="qr"></canvas>
+</div>
+</div>
+
 <!-- ADMIN -->
+<div id="admin" class="page hidden">
 <div class="card">
 <h2>🔧 หลังบ้าน</h2>
 
 <input id="name" placeholder="ชื่อสินค้า">
 <input id="price" placeholder="ราคา">
-<input id="img" placeholder="ลิงก์รูปภาพ">
+<input id="img" placeholder="ลิงก์รูป">
 <textarea id="desc" placeholder="รายละเอียด"></textarea>
 
 <button onclick="addProduct()">➕ เพิ่มสินค้า</button>
 
 <div id="adminList"></div>
 </div>
-
-<!-- QR -->
-<div class="card">
-<h2>📱 QR ร้าน</h2>
-<div class="qr"><canvas id="qr"></canvas></div>
 </div>
 
 <!-- SHOP -->
+<div id="shop" class="page hidden">
+
+<div class="card">
+<h2>📞 ติดต่อร้าน</h2>
+
+<a href="https://line.me/ti/g2/AMkf59O56XfZQn1Tgp_ER7Jqpm-ObPGyWR15MQ?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" class="contact-btn line">
+💬 เข้ากลุ่ม LINE (NattDev)
+</a>
+
+<a href="https://www.facebook.com/share/18WYnQ5aRZ/?mibextid=wwXIfr" target="_blank" class="contact-btn fb">
+📘 ติดต่อ Facebook
+</a>
+
+<p style="font-size:13px;opacity:0.8;">
+📢 โอนแล้วส่งสลิปทาง LINE หรือ Facebook
+</p>
+
+</div>
+
 <div class="card">
 <h2>🛍️ สั่งซื้อ</h2>
 
-<input id="cname" placeholder="ชื่อ *">
-<input id="phone" placeholder="เบอร์ *">
+<input id="cname" placeholder="ชื่อ">
+<input id="phone" placeholder="เบอร์">
 <input id="contact" placeholder="Facebook / Line">
 
-<h3>สินค้า</h3>
 <div id="shopList"></div>
 
-<button onclick="order()">✅ ยืนยันสั่งซื้อ</button>
+<button onclick="order()">✅ สั่งซื้อ</button>
 
 <div id="result"></div>
+
+</div>
 </div>
 
 </div>
 
 <script>
+
+// ===== เปลี่ยนหน้า =====
+function show(page){
+  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+  document.getElementById(page).classList.remove("hidden");
+}
 
 // ===== โหลดสินค้า =====
 let products = JSON.parse(localStorage.getItem("products")) || [];
@@ -146,13 +130,13 @@ function addProduct(){
 
 // ===== แสดงสินค้า =====
 function render(){
-  adminList.innerHTML = "";
-  shopList.innerHTML = "";
+  adminList.innerHTML="";
+  shopList.innerHTML="";
 
-  products.forEach((p,i)=>{
+  products.forEach(p=>{
     adminList.innerHTML += `
       <div class="product">
-        <b>${p.name}</b> - ${p.price}฿
+        ${p.name} - ${p.price} บาท
       </div>
     `;
 
@@ -161,61 +145,53 @@ function render(){
         <img src="${p.img}">
         <h3>${p.name}</h3>
         <p>${p.desc}</p>
-        <p>💰 ${p.price} บาท</p>
-        <label>
-          <input type="checkbox" value="${p.name}|${p.price}">
-          เลือกสินค้า
-        </label>
+        <p>${p.price} บาท</p>
+        <input type="checkbox" value="${p.name}|${p.price}">
       </div>
     `;
   });
 }
 
 // ===== QR =====
-QRCode.toCanvas(document.getElementById("qr"), window.location.href, {
-  width:200
-});
+QRCode.toCanvas(document.getElementById("qr"), window.location.href);
 
 // ===== Telegram =====
-const TOKEN = "8583371666:AAFgVt_SVUw8Gr5DJCzIG474MqmbJ6HBtjg";
-const CHAT_ID = "7967010433";
+const TOKEN = "PUT_YOUR_TOKEN";
+const CHAT_ID = "PUT_CHAT_ID";
 
 // ===== สั่งซื้อ =====
 function order(){
 
-  let cnameVal = cname.value.trim();
-  let phoneVal = phone.value.trim();
-
-  if(!cnameVal || !phoneVal){
+  if(!cname.value || !phone.value){
     alert("กรอกชื่อและเบอร์");
     return;
   }
 
-  let selected = [];
-  let total = 0;
+  let selected=[];
+  let total=0;
 
-  document.querySelectorAll("#shopList input:checked").forEach(el=>{
-    let [n,p] = el.value.split("|");
+  document.querySelectorAll("#shop input[type=checkbox]:checked")
+  .forEach(el=>{
+    let [n,p]=el.value.split("|");
     selected.push(n);
-    total += parseInt(p);
+    total+=parseInt(p);
   });
 
-  if(selected.length === 0){
+  if(selected.length===0){
     alert("เลือกสินค้า");
     return;
   }
 
   let msg = `
 🛒 ออเดอร์ใหม่
-👤 ${cnameVal}
-📞 ${phoneVal}
+👤 ${cname.value}
+📞 ${phone.value}
 💬 ${contact.value}
 
 📦 ${selected.join(", ")}
-💰 รวม ${total} บาท
+💰 ${total} บาท
 `;
 
-  // ===== ส่ง Telegram =====
   fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -225,24 +201,12 @@ function order(){
     })
   });
 
-  // ===== ลิงก์ =====
-  let url = window.location.href;
-
   result.innerHTML = `
-    <p>📎 คัดลอกลิงก์ร้าน</p>
-    <input id="copyLink" value="${url}">
-    <button class="copy" onclick="copyLink()">📋 คัดลอก</button>
+  <p>📎 ลิงก์ร้าน</p>
+  <input value="${location.href}">
   `;
 
-  alert("สั่งซื้อเรียบร้อย");
-}
-
-// ===== copy =====
-function copyLink(){
-  let input = document.getElementById("copyLink");
-  input.select();
-  document.execCommand("copy");
-  alert("คัดลอกแล้ว");
+  alert("สั่งซื้อสำเร็จ");
 }
 
 // ===== start =====
