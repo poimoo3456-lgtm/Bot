@@ -1,149 +1,152 @@
-```python
-import telebot
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
-import json
-import os
-import time
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>NattDev QR Ultimate</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
-# --- 1. ตั้งค่า TOKEN และ ID ---
-# ตรวจสอบให้แน่ใจว่าไม่มีช่องว่างเกินมาใน String
-TELEGRAM_TOKEN = "8583371666:AAHiIMouBgJRH6XiiFuSeRV_qhA4WogaTuk"
-ADMIN_ID = 7967010433 
+<style>
+body {
+  font-family: sans-serif;
+  background: linear-gradient(135deg,#0f2027,#2c5364);
+  color: white;
+  text-align: center;
+}
+.box {
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  margin: 20px auto;
+  width: 300px;
+  border-radius: 15px;
+}
+input, button {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+}
+button {
+  background: #00ffcc;
+  cursor: pointer;
+}
+canvas {
+  margin-top: 20px;
+  border: 5px solid white;
+  border-radius: 10px;
+}
+.hidden { display: none; }
+</style>
+</head>
 
-# สร้าง Instance ของบอท
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+<body>
 
-# --- 2. การจัดการฐานข้อมูล (Local JSON) ---
-DATA_FILE = "customers.json"
+<h1>🔥 NattDev QR Ultimate</h1>
 
-def init_db():
-    if not os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump([], f)
+<!-- LOGIN -->
+<div id="auth" class="box">
+  <h3>สมัคร / ล็อกอิน</h3>
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
 
-def save_to_json(data):
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            customers = json.load(f)
-        customers.append(data)
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(customers, f, indent=4, ensure_ascii=False)
-        print(f" LOG: บันทึกข้อมูลลูกค้า {data['name']} สำเร็จ")
-    except Exception as e:
-        print(f" ERROR: ไม่สามารถบันทึกไฟล์ได้: {e}")
+  <button onclick="register()">สมัคร</button>
+  <button onclick="login()">ล็อกอิน</button>
+</div>
 
-# --- 3. การสร้างเมนู ---
-def get_main_menu():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(KeyboardButton("🏢 เกี่ยวกับบริษัท"), KeyboardButton("🛠️ บริการ"))
-    markup.add(KeyboardButton("💰 ราคา"), KeyboardButton("🛒 สั่งซื้อ"))
-    markup.add(KeyboardButton("📞 ติดต่อ"), KeyboardButton("👨‍💻 คุยกับแอดมิน"))
-    return markup
+<!-- DASHBOARD -->
+<div id="app" class="hidden">
+  <div class="box">
+    <h3 id="welcome"></h3>
 
-def get_order_menu():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add("🤖 AI Chatbot", "🌐 เว็บไซต์")
-    markup.add("📱 แอปมือถือ", "🏢 ระบบบริษัท")
-    markup.add("🔙 กลับเมนูหลัก")
-    return markup
+    <input id="text" placeholder="ใส่ข้อความ / ลิงก์"><br>
 
-# --- 4. ตัวแปรเก็บสถานะ (In-memory State) ---
-user_state = {}
+    <label>สี QR</label>
+    <input type="color" id="color" value="#00ffcc"><br>
 
-# --- 5. Handlers ---
+    <button onclick="generateQR()">สร้าง QR</button>
+    <button onclick="downloadQR()">ดาวน์โหลด</button>
 
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    print(f" LOG: มีคนกดเริ่มบอท (ID: {message.chat.id})")
-    bot.reply_to(message, 
-        "ยินดีต้อนรับสู่ NattDev AI 🤖\nกรุณาเลือกเมนูที่ต้องการด้านล่างครับ", 
-        reply_markup=get_main_menu())
+    <br>
+    <canvas id="qr"></canvas>
+  </div>
+</div>
 
-@bot.message_handler(func=lambda message: True)
-def handle_all_messages(message):
-    chat_id = message.chat.id
-    text = message.text
+<script>
+let currentUser = null;
 
-    # ปุ่มพื้นฐาน
-    if text == "🔙 กลับเมนูหลัก":
-        user_state.pop(chat_id, None)
-        bot.send_message(chat_id, "กลับสู่เมนูหลัก", reply_markup=get_main_menu())
-        return
+// สมัคร
+function register() {
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
 
-    if text == "🏢 เกี่ยวกับบริษัท":
-        bot.send_message(chat_id, "🏢 NattDev AI Co., Ltd.\nเชี่ยวชาญด้าน AI และการวางระบบ Software อัตโนมัติ")
-    
-    elif text == "🛠️ บริการ":
-        bot.send_message(chat_id, "🛠️ บริการของเรา:\n1. AI Chatbot\n2. เว็บไซต์ธุรกิจ\n3. โมบายแอป\n4. ระบบหลังบ้าน")
+  if (!email || !pass) return alert("กรอกข้อมูล");
 
-    elif text == "💰 ราคา":
-        bot.send_message(chat_id, "💰 ราคาเริ่มต้นที่ 1,500 บาท ขึ้นอยู่กับความยากง่ายของงานครับ")
+  localStorage.setItem("user_"+email, pass);
+  alert("สมัครสำเร็จ");
+}
 
-    elif text == "📞 ติดต่อ":
-        bot.send_message(chat_id, "📞 โทร: 063-769-5934")
+// ล็อกอิน
+function login() {
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
 
-    # Flow การสั่งซื้อ
-    elif text == "🛒 สั่งซื้อ":
-        bot.send_message(chat_id, "เลือกบริการที่สนใจ:", reply_markup=get_order_menu())
+  const saved = localStorage.getItem("user_"+email);
 
-    elif text in ["🤖 AI Chatbot", "🌐 เว็บไซต์", "📱 แอปมือถือ", "🏢 ระบบบริษัท"]:
-        user_state[chat_id] = {"step": "NAME", "product": text}
-        bot.send_message(chat_id, f"คุณเลือก {text}\nรบกวนขอทราบ 'ชื่อ' ของคุณครับ:")
+  if (saved === pass) {
+    currentUser = email;
+    localStorage.setItem("login", email);
 
-    # การดักจับข้อมูลตามลำดับ Step
-    elif chat_id in user_state:
-        state = user_state[chat_id]
-        
-        if state.get("step") == "NAME":
-            user_state[chat_id]["name"] = text
-            user_state[chat_id]["step"] = "PHONE"
-            bot.send_message(chat_id, "ขอทราบ 'เบอร์โทรศัพท์' สำหรับติดต่อกลับครับ:")
-            
-        elif state.get("step") == "PHONE":
-            user_state[chat_id]["phone"] = text
-            customer_data = user_state[chat_id]
-            
-            # บันทึกข้อมูล
-            save_to_json({
-                "time": time.ctime(),
-                "name": customer_data["name"],
-                "phone": customer_data["phone"],
-                "product": customer_data["product"]
-            })
+    showApp();
+  } else {
+    alert("ข้อมูลไม่ถูกต้อง");
+  }
+}
 
-            # แจ้งแอดมิน
-            try:
-                bot.send_message(ADMIN_ID, f"📢 ออเดอร์ใหม่!\nสินค้า: {customer_data['product']}\nชื่อ: {customer_data['name']}\nโทร: {customer_data['phone']}")
-            except:
-                print(" ERROR: ส่งแจ้งเตือนหาแอดมินไม่สำเร็จ (ID อาจผิด)")
+// โหลด session
+window.onload = () => {
+  const loginUser = localStorage.getItem("login");
+  if (loginUser) {
+    currentUser = loginUser;
+    showApp();
+  }
+};
 
-            bot.send_message(chat_id, "✅ บันทึกข้อมูลเรียบร้อย แอดมินจะติดต่อกลับครับ", reply_markup=get_main_menu())
-            del user_state[chat_id]
+// แสดง dashboard
+function showApp() {
+  document.getElementById("auth").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
 
-    elif text == "👨‍💻 คุยกับแอดมิน":
-        bot.send_message(chat_id, "พิมพ์ข้อความที่ต้องการส่งหาแอดมินได้เลยครับ")
-        user_state[chat_id] = {"step": "CHAT"}
+  document.getElementById("welcome").innerText =
+    "👤 ผู้ใช้: " + currentUser;
+}
 
-    elif chat_id in user_state and user_state[chat_id].get("step") == "CHAT":
-        try:
-            bot.send_message(ADMIN_ID, f"📩 ข้อความจากลูกค้า (ID {chat_id}):\n{text}")
-            bot.send_message(chat_id, "ส่งข้อความถึงแอดมินแล้วครับ ✅", reply_markup=get_main_menu())
-        except:
-            bot.send_message(chat_id, "เกิดข้อผิดพลาดในการส่งข้อความ")
-        del user_state[chat_id]
+// สร้าง QR
+function generateQR() {
+  const text = document.getElementById("text").value;
+  const color = document.getElementById("color").value;
 
-# --- 6. เริ่มการรันบอท ---
-if __name__ == "__main__":
-    init_db()
-    print("--------------------------------------")
-    print(" NattDev AI Bot กำลังทำงาน... (v1.1)")
-    print(" กด Ctrl+C เพื่อหยุดการทำงาน")
-    print("--------------------------------------")
-    
-    # ใช้ infinity_polling เพื่อให้บอทไม่ตายเมื่อเน็ตหลุด
-    try:
-        bot.infinity_polling()
-    except Exception as e:
-        print(f" CRITICAL ERROR: {e}")
+  const data = JSON.stringify({
+    name: currentUser,
+    text: text,
+    time: new Date().toLocaleString()
+  });
 
-```
+  QRCode.toCanvas(document.getElementById("qr"), data, {
+    color: {
+      dark: color,
+      light: "#000000"
+    }
+  });
+}
+
+// ดาวน์โหลด
+function downloadQR() {
+  const canvas = document.getElementById("qr");
+  const link = document.createElement("a");
+  link.download = "qr.png";
+  link.href = canvas.toDataURL();
+  link.click();
+}
+</script>
+
+</body>
+</html>
