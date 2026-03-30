@@ -1,468 +1,161 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sticker AI Lab - Professional Edition</title>
-    <!-- Load necessary libraries via CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', 'Sarabun', sans-serif;
-            background-color: #f8fafc;
-            color: #1e293b;
-        }
-        .pro-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        }
-        .input-focus:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            transition: all 0.2s ease;
-        }
-        .btn-primary:hover {
-            background-color: #4338ca;
-        }
-        .btn-primary:disabled {
-            background-color: #94a3b8;
-            cursor: not-allowed;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        /* Modal Overlay Animation */
-        .modal-overlay {
-            animation: fadeIn 0.2s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NattDev Self Development System PRO</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#0f172a;color:#fff}
+.container{padding:20px}
+.card{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);padding:15px;border-radius:15px;margin-bottom:15px}
+input,button,textarea{width:100%;padding:10px;margin:5px 0;border:none;border-radius:10px}
+button{background:linear-gradient(45deg,#06b6d4,#3b82f6);color:#fff;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.book{padding:10px;border-radius:10px;background:#1e293b;cursor:pointer}
+.progress{height:10px;background:#1e293b;border-radius:10px;margin-top:5px}
+.progress-bar{height:10px;background:#22c55e;border-radius:10px;transition:width 0.3s}
+</style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        // --- Set API KEY here ---
-        // For preview mode within this platform, the key is provided automatically.
-        const apiKey = "AIzaSyBWvm7DXIX2csef1jWgvGEhyZJwPJpm9Hk";
-        // -------------------------
-        // --- Professional Icons (SVG) ---
-        const IconSparkles = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-        );
-        const IconUpload = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-        );
-        const IconDownload = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-        );
-        const IconSettings = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        );
-        const IconHelp = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
-        );
-        const IconKey = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3L15.5 7.5z"/></svg>
-        );
-        const IconClose = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        );
-        const TONE_OPTIONS = [
-            { id: 'happy', label: 'สดใส / เชิงบวก', prompt: 'happy, cheerful, energetic, smiling' },
-            { id: 'cool', label: 'สุขุม / ทันสมัย', prompt: 'cool, confident, minimal, modern look' },
-            { id: 'sad', label: 'เรียบง่าย / อ่อนโยน', prompt: 'soft lighting, gentle expression, subtle emotions' },
-            { id: 'angry', label: 'เข้มข้น / จริงจัง', prompt: 'intense, professional serious tone, dramatic lighting' },
-            { id: 'love', label: 'อบอุ่น / มิตรภาพ', prompt: 'warm lighting, friendly, welcoming atmosphere' },
-        ];
-        const COUNT_OPTIONS = [1, 2, 4];
-        function App() {
-            const [base64Image, setBase64Image] = useState(null);
-            const [stickerText, setStickerText] = useState("");
-            const [selectedTone, setSelectedTone] = useState(TONE_OPTIONS[0].id);
-            const [stickerCount, setStickerCount] = useState(1);
-            const [isGenerating, setIsGenerating] = useState(false);
-            const [generatedStickers, setGeneratedStickers] = useState([]);
-            const [error, setError] = useState(null);
-            const [isHelpOpen, setIsHelpOpen] = useState(false);
-            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                       
-                        if (response.status === 429) {
-                            throw new Error("ระบบหนาแน่นเกินไป (Quota Exceeded) กรุณารอสักครู่แล้วลองใหม่");
-                        }
-                       
-                        if (response.status === 403 || response.status === 401) {
-                            throw new Error("API Key ไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึงโมเดลนี้ (กรุณาเช็ค apiKey ในโค้ดบรรทัดที่ 46)");
-                        }
-                       
-                        throw new Error(errorData.error?.message || `Error ${response.status}`);
-                    }
-                    return await response.json();
-                } catch (err) {
-                    if (retries > 0 && !err.message.includes("API Key") && !err.message.includes("Quota")) {
-                        await sleep(backoff);
-                        return fetchWithRetry(url, options, retries - 1, backoff * 2);
-                    }
-                    throw err;
-                }
-            };
-            const overlayTextOnImage = (imageSrc, text) => {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.crossOrigin = "anonymous";
-                    img.onload = () => {
-                        try {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                           
-                            if (text) {
-                                const fontSize = canvas.width * 0.11;
-                                ctx.font = `600 ${fontSize}px "Sarabun", sans-serif`;
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                const x = canvas.width / 2;
-                                const y = canvas.height * 0.94;
-                                ctx.strokeStyle = 'white';
-                                ctx.lineWidth = fontSize * 0.22;
-                                ctx.lineJoin = 'round';
-                                ctx.strokeText(text, x, y);
-                               
-                                ctx.shadowColor = 'rgba(0,0,0,0.2)';
-                                ctx.shadowBlur = 12;
-                                ctx.shadowOffsetX = 3;
-                                ctx.shadowOffsetY = 3;
-                                ctx.fillStyle = '#1e293b';
-                                ctx.fillText(text, x, y);
-                            }
-                            resolve(canvas.toDataURL('image/png'));
-                        } catch (e) { reject(e); }
-                    };
-                    img.onerror = () => reject(new Error("การประมวลผลภาพล้มเหลว"));
-                    img.src = imageSrc;
-                });
-            };
-            const handleImageUpload = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setBase64Image(reader.result.split(',')[1]);
-                        setError(null);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-            const generateStickers = async () => {
-                // In this environment, the key is handled automatically.
-                // We only check if the string is empty for standalone use instructions.
-                if (typeof __initial_auth_token === 'undefined' && (!apiKey || !apiKey.trim())) {
-                    setError("กรุณากรอก API Key ในโค้ดบรรทัดที่ 46 ก่อนเริ่มต้นการใช้งาน");
-                    setIsHelpOpen(true);
-                    return;
-                }
-                if (!base64Image) {
-                    setError("กรุณาอัปโหลดรูปภาพต้นแบบ");
-                    return;
-                }
-                setIsGenerating(true);
-                setError(null);
-                setGeneratedStickers([]);
-                try {
-                    const toneDesc = TONE_OPTIONS.find(t => t.id === selectedTone).prompt;
-                   
-                    for (let i = 0; i < stickerCount; i++) {
-                        if (i > 0) {
-                            await sleep(2000);
-                        }
-                        const prompt = `Generate a high-quality professional digital sticker illustration based on the character shown in this image.
-                                        Guidelines:
-                                        - Character Expression: ${toneDesc}
-                                        - Design: Clean 3D commercial style with a thick white sticker outline.
-                                        - Art style: Professional character illustration, vibrant colors.
-                                        - Background: SOLID WHITE ONLY.
-                                        - NO TEXT or typography in the image.`;
-                        const payload = {
-                            contents: [{
-                                parts: [
-                                    { text: prompt },
-                                    { inlineData: { mimeType: "image/png", data: base64Image } }
-                                ]
-                            }],
-                            generationConfig: {
-                                responseModalities: ["IMAGE"]
-                            }
-                        };
-                        const response = await fetchWithRetry(
-                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`,
-                            {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            }
-                        );
-                        const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                        if (base64Data) {
-                            const rawAiImage = `data:image/png;base64,${base64Data}`;
-                            const finalSticker = await overlayTextOnImage(rawAiImage, stickerText);
-                            setGeneratedStickers(prev => [...prev, finalSticker]);
-                        }
-                    }
-                } catch (err) {
-                    setError(err.message);
-                } finally {
-                    setIsGenerating(false);
-                }
-            };
-            return (
-                <div className="min-h-screen relative">
-                    {/* Help Modal */}
-                    {isHelpOpen && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm modal-overlay">
-                            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
-                                    <div className="flex items-center gap-2">
-                                        <IconHelp className="text-indigo-600" />
-                                        <h2 className="font-bold text-indigo-900">คู่มือการเริ่มต้นใช้งาน</h2>
-                                    </div>
-                                    <button
-                                        onClick={() => setIsHelpOpen(false)}
-                                        className="p-1 hover:bg-white rounded-full transition-colors text-slate-400"
-                                    >
-                                        <IconClose />
-                                    </button>
-                                </div>
-                                <div className="p-8 space-y-6">
-                                    <div className="flex gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 font-bold shadow-lg">1</div>
-                                        <p className="text-sm text-slate-700 leading-relaxed">
-                                            ไปที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" className="font-bold text-indigo-600 underline">Google AI Studio</a> เพื่อสร้าง API Key ฟรี
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 font-bold shadow-lg">2</div>
-                                        <p className="text-sm text-slate-700 leading-relaxed">
-                                            เปิดไฟล์ <code className="bg-slate-100 px-1.5 rounded border border-slate-200 font-mono text-indigo-600">index.html</code> นี้ด้วยโปรแกรมแก้ไขข้อความ
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 font-bold shadow-lg">3</div>
-                                        <div className="text-sm text-slate-700 leading-relaxed">
-                                            ค้นหาบรรทัดที่ 46 <span className="font-mono text-[11px] block mt-2 bg-slate-900 p-2 rounded text-indigo-300">const apiKey = "";</span> แล้วนำคีย์ไปวางไว้ในเครื่องหมายคำพูด
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 font-bold shadow-lg">4</div>
-                                        <p className="text-sm text-slate-700 leading-relaxed font-bold">
-                                            กดบันทึก (Save) ไฟล์ และรีเฟรชหน้าเว็บนี้เพื่อเริ่มใช้งาน!
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                                    <button
-                                        onClick={() => setIsHelpOpen(false)}
-                                        className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-md text-sm"
-                                    >
-                                        เข้าใจแล้ว
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex justify-between h-16 items-center">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white shadow-sm">
-                                        <IconSparkles />
-                                    </div>
-                                    <span className="text-xl font-bold text-slate-900 tracking-tight">Sticker AI Lab</span>
-                                </div>
-                                <div className="hidden sm:flex items-center gap-4">
-                                    <button
-                                        onClick={() => setIsHelpOpen(true)}
-                                        className="flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-4 py-2 rounded-full transition-colors"
-                                    >
-                                        <IconHelp /> วิธีใช้งาน
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                        <div className="grid lg:grid-cols-12 gap-8">
-                           
-                            <aside className="lg:col-span-4 space-y-6">
-                                <div className="pro-card rounded-xl p-6 space-y-6">
-                                    <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
-                                        <IconSettings />
-                                        <h2 className="font-semibold text-slate-800">ตั้งค่าการทำงาน</h2>
-                                    </div>
-                                    {/* Status Indicator */}
-                                    <div
-                                        onClick={() => setIsHelpOpen(true)}
-                                        className={`p-4 border rounded-xl flex flex-col gap-2 cursor-pointer transition-colors
-                                        ${apiKey ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200 hover:bg-amber-100'}`}
-                                    >
-                                        <div className={`flex items-center gap-2 font-bold text-xs uppercase tracking-wider
-                                        ${apiKey ? 'text-emerald-800' : 'text-amber-800'}`}>
-                                            <IconKey className="w-4 h-4" />
-                                            สถานะ: {apiKey ? 'ติดตั้ง Key แล้ว' : 'ยังไม่ได้ติดตั้ง Key'}
-                                        </div>
-                                        <p className={`text-[11px] leading-relaxed ${apiKey ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                            {apiKey ? 'พร้อมสำหรับการใช้งานระดับสูง' : 'กรุณาติดตั้ง API Key ในไฟล์โค้ดก่อนใช้งาน'} <span className="font-bold underline italic">คลิกดูวิธีที่นี่</span>
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">1. คาแรคเตอร์ต้นแบบ</label>
-                                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="file-upload" />
-                                        <label htmlFor="file-upload" className={`
-                                            flex flex-col items-center justify-center w-full h-40 border rounded-lg cursor-pointer transition-all
-                                            ${base64Image ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 border-dashed hover:border-indigo-400 hover:bg-slate-50'}
-                                        `}>
-                                            {base64Image ? (
-                                                <img src={`data:image/png;base64,${base64Image}`} className="h-full w-full object-contain p-2" />
-                                            ) : (
-                                                <div className="text-center text-slate-400">
-                                                    <IconUpload />
-                                                    <p className="text-xs mt-2 font-medium">คลิกเพื่ออัปโหลดรูป</p>
-                                                </div>
-                                            )}
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">2. ข้อความภาษาไทย</label>
-                                        <input
-                                            type="text"
-                                            placeholder="ระบุข้อความ..."
-                                            value={stickerText}
-                                            onChange={(e) => setStickerText(e.target.value)}
-                                            className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm input-focus"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">3. อารมณ์</label>
-                                            <select value={selectedTone} onChange={(e) => setSelectedTone(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-xs font-medium focus:border-indigo-500 outline-none">
-                                                {TONE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">4. จำนวน</label>
-                                            <select value={stickerCount} onChange={(e) => setStickerCount(Number(e.target.value))} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-xs font-medium focus:border-indigo-500 outline-none">
-                                                {COUNT_OPTIONS.map(c => <option key={c} value={c}>{c} รูป</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    {error && (
-                                        <div className="bg-red-50 border border-red-100 p-4 rounded-lg text-red-600 text-xs leading-relaxed flex flex-col gap-1">
-                                            <div className="flex items-center gap-1 font-bold">
-                                                <span className="text-sm">⚠️</span> ตรวจพบปัญหา
-                                            </div>
-                                            <div>{error}</div>
-                                            {error.includes("Quota") && <div className="mt-1 font-bold text-red-700 underline">แนะนำ: สร้างครั้งละ 1 รูป เพื่อลดการถูกบล็อกชั่วคราว</div>}
-                                        </div>
-                                    )}
-                                    <button
-                                        onClick={generateStickers}
-                                        disabled={isGenerating || !base64Image}
-                                        className="w-full py-4 rounded-lg font-bold text-sm text-white btn-primary flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
-                                    >
-                                        {isGenerating ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                <span>กำลังเสกสติ๊กเกอร์...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <IconSparkles />
-                                                <span>สร้างสติ๊กเกอร์</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </aside>
-                            <main className="lg:col-span-8">
-                                <div className="pro-card rounded-xl min-h-[600px] flex flex-col">
-                                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-xl">
-                                        <h2 className="text-sm font-semibold text-slate-700">Digital Preview</h2>
-                                        <div className="flex gap-2">
-                                            {isGenerating && <span className="text-[10px] text-indigo-600 font-bold animate-pulse uppercase">AI Processing...</span>}
-                                        </div>
-                                    </div>
-                                    <div className={`flex-1 p-8 overflow-y-auto flex flex-wrap content-start gap-6 ${generatedStickers.length === 0 ? 'items-center justify-center' : ''}`}>
-                                        {generatedStickers.length === 0 && !isGenerating && (
-                                            <div className="text-center text-slate-300">
-                                                <IconSparkles />
-                                                <p className="mt-2 text-sm font-medium">สติ๊กเกอร์ที่สร้างเสร็จแล้วจะมาแสดงที่นี่</p>
-                                            </div>
-                                        )}
-                                        {generatedStickers.map((url, idx) => (
-                                            <div key={idx} className="w-full sm:w-[calc(50%-12px)] group animate-in fade-in zoom-in duration-500">
-                                                <div className="bg-white border border-slate-200 rounded-lg p-3 relative hover:border-indigo-300 hover:shadow-lg transition-all overflow-hidden shadow-sm">
-                                                    <div className="aspect-square bg-slate-50 rounded flex items-center justify-center relative shadow-inner">
-                                                        <img src={url} className="w-full h-full object-contain p-2" alt={`Sticker ${idx+1}`} />
-                                                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[1px]">
-                                                            <a href={url} download={`sticker-ai-${idx+1}.png`} className="bg-white px-6 py-3 rounded-lg font-bold text-slate-900 text-xs flex items-center gap-2 hover:bg-slate-100 shadow-2xl transition-all active:scale-90">
-                                                                <IconDownload /> บันทึกรูป
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                    <div className="mt-3 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                                        <span>Asset #{idx + 1}</span>
-                                                        <span className="text-indigo-500 uppercase font-bold tracking-tight">AI Generated PNG</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {isGenerating && stickerCount > generatedStickers.length && (
-                                            <div className="w-full sm:w-[calc(50%-12px)] aspect-square border-2 border-dashed border-indigo-100 rounded-lg flex flex-col items-center justify-center text-slate-300 gap-3 bg-indigo-50/10">
-                                                <div className="w-8 h-8 border-4 border-slate-50 border-t-indigo-500 rounded-full animate-spin"></div>
-                                                <span className="text-[10px] font-bold animate-pulse uppercase tracking-wider text-indigo-400">Generating #{generatedStickers.length + 1}...</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                   
-                                    <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-xl">
-                                        <p className="text-[10px] text-slate-400 text-center font-medium leading-relaxed uppercase tracking-tighter">
-                                            Enterprise Hybrid Engine: Gemini 2.5 Flash + HTML5 Canvas Rendering v2.3
-                                        </p>
-                                    </div>
-                                </div>
-                            </main>
-                        </div>
-                    </div>
-                    <footer className="py-12 border-t border-slate-200 bg-white">
-                        <div className="max-w-7xl mx-auto px-4 text-center">
-                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-[0.4em]">Sticker AI Lab Standalone Edition • Professional Platform</p>
-                        </div>
-                    </footer>
-                </div>
-            );
-        }
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+<div class="container" id="app"></div>
+<script>
+const app=document.getElementById('app')
+
+// ===== USER SYSTEM =====
+function getUser(){return JSON.parse(localStorage.getItem('user'))}
+function saveUser(u){localStorage.setItem('user',JSON.stringify(u))}
+
+function showAuth(){
+app.innerHTML=`
+<div class="card">
+<h2>Login / Register</h2>
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+<input id="goal" placeholder="Goal">
+<button onclick="auth()">เข้าใช้งาน</button>
+</div>`
+}
+
+function auth(){
+const username=document.getElementById('username').value
+const password=document.getElementById('password').value
+const goal=document.getElementById('goal').value
+let u=getUser()
+if(!u){
+u={username,password,goal,xp:0,level:1,completed:[],streak:0}
+saveUser(u)
+alert('สมัครสำเร็จ')
+}else if(u.username===username && u.password===password){
+alert('เข้าสู่ระบบสำเร็จ')
+}else{
+alert('Username หรือ Password ไม่ถูกต้อง')
+return
+}
+render()
+}
+
+// ===== DASHBOARD =====
+function dashboard(){
+const u=getUser()
+let progress=u.xp%100
+return `
+<div class="card">
+<h2>Dashboard</h2>
+<p>Level: ${u.level}</p>
+<p>XP: ${u.xp}</p>
+<p>Goal: ${u.goal}</p>
+<p>Streak: ${u.streak} วัน</p>
+<div class="progress"><div class="progress-bar" style="width:${progress}%"></div></div>
+</div>`
+}
+
+// ===== PLACEHOLDER LIBRARY =====
+const books=[
+{title:'หนังสือ A',category:'Self Development'},
+{title:'หนังสือ B',category:'Coding'},
+{title:'หนังสือ C',category:'Trading'}
+]
+
+function library(){
+let html='<h2>Library</h2><div class="grid">'
+books.forEach((b,i)=>{
+html+=`<div class="book" onclick="openBook(${i})">${b.title}</div>`
+})
+html+='</div>'
+return html
+}
+
+function generateContent(title){
+return {chapters:[`บทที่ 1: พื้นฐาน ${title}`,`บทที่ 2: การใช้งาน ${title}`,`บทที่ 3: ขั้นสูง ${title}`],exercises:['คุณได้เรียนรู้อะไร?','จะนำไปใช้ยังไง?']}
+}
+
+function openBook(i){
+const b=books[i]
+const c=generateContent(b.title)
+let html=`<div class="card"><h2>${b.title}</h2>`
+c.chapters.forEach(ch=>html+=`<p>${ch}</p>`)
+c.exercises.forEach((ex,idx)=>{
+html+=`<textarea placeholder="${ex}" onblur="saveAnswer(${i},${idx},this.value)"></textarea>`
+})
+html+=`<button onclick="completeBook(${i})">อ่านจบ</button></div>`
+app.innerHTML=dashboard()+html+aiCoach()+payment()
+}
+
+function saveAnswer(book,ex,val){
+let data=JSON.parse(localStorage.getItem('answers')||'{}')
+data[book+'-'+ex]=val
+localStorage.setItem('answers',JSON.stringify(data))
+}
+
+function completeBook(i){
+let u=getUser()
+if(!u.completed.includes(i)){
+u.completed.push(i)
+u.xp+=20
+u.streak+=1
+u.level=Math.floor(u.xp/100)+1
+saveUser(u)
+alert('ได้ XP +20')
+}
+render()
+}
+
+// ===== AI COACH (MOCK CHATBOT) =====
+function aiCoach(){
+return `<div class="card">
+<h2>AI Coach</h2>
+<textarea id="q" placeholder="ถามคำถาม"></textarea>
+<button onclick="askAI()">ถาม</button>
+<div id="res"></div>
+</div>`
+}
+
+function askAI(){
+const q=document.getElementById('q').value
+document.getElementById('res').innerHTML=`แนะนำ: อ่าน ${books[0].title} และฝึกทุกวันเพื่อ XP + Streak`}
+
+// ===== PAYMENT + TELEGRAM =====
+function payment(){
+return `<div class="card">
+<h2>สนับสนุน / โอนเงิน</h2>
+<img src="https://cdn.phototourl.com/free/2026-03-30-b6bd7b60-7a93-4171-b412-3be02f5d728d.jpg" width="100%">
+<input type="file" id="slip">
+<button onclick="sendSlip()">ส่งสลิป</button>
+</div>`
+}
+
+function sendSlip(){
+// ตัวอย่างส่งข้อมูลไป Telegram (ต้องใส่ BOT TOKEN & CHAT ID จริง)
+alert('ส่งสลิปไป Telegram เรียบร้อย (mock)')
+}
+
+// ===== MAIN RENDER =====
+function render(){
+if(!getUser()) return showAuth()
+app.innerHTML=`<h1>NattDev Self Development System PRO</h1>`+dashboard()+library()+aiCoach()+payment()
+}
+
+render()
+</script>
 </body>
 </html>
